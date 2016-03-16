@@ -1,0 +1,36 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+  <head>
+	<title>LED Controller</title>
+	<script src="socket.io/socket.io.js"></script>
+	<style>
+	#outputText {
+		display : block; 
+		background : white; 
+		border : 2px black solid;
+		border-radius : 8px;  
+		width : 300px; 
+		height : 100px; 
+	} 
+	</style>
+  </head>
+  <body>
+	
+	<span id="outputText" onmousedown="mouseDown()" onmouseup="mouseUp()"> </span>
+	
+	<script type="text/javascript">
+		var socket = io.connect();
+		
+		socket.on('led', function (data) {
+			document.getElementById("outputText").style.background = (data.value)?'red':'white';
+		});
+		
+		function mouseDown(){	
+			socket.emit('led', { value: true });
+		}
+		function mouseUp(){
+			socket.emit('led', { value: false });
+		}
+	</script>
+  </body>
+</html>
