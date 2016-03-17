@@ -15,51 +15,42 @@
 
 </style>
 <body>
+<script src="socket.io/socket.io.js"></script>
 	
 <script>
 
-var WEB_SOCKET_URL = "node.seb.ly:8102"
-
-var ws, 
-	wsConnected = false, 
-	connectionRetryTimeout = 1000; 
-	
-
-	
 
 var textInputs = [];
+var room = getQueryVariable("room"); 
+console.log("room", room);
+if(room) addNewTextInput(room);
+else room = 'defaultroom'
 
-ws = new WebSocket("ws://"+WEB_SOCKET_URL); 
-console.log('Attempting connection '+WEB_SOCKET_URL); 
+var socket = io.connect();
 
-ws.onopen = function(e) { 
-	console.log('Connected to '+WEB_SOCKET_URL); 
-	wsConnected = true; 
-	var id = getQueryVariable("id"); 
-	console.log("id", id);
-	if(id) sendObject({type:'register', id:id} );
-	else sendObject({type:'register'} );
-};
+socket.on('connect', function() { 
+	if(room) socket.emit('joinroom', {value:room}); 
+	else socket.emit('joinroom', {value:''});
+});
 
-ws.onmessage = function(e) { 
-	//console.log(e.data); 
+socket.on('message', function (data) {
+
+	console.log("RECEIVED : ", data.value); 
+	console.log(data);
+	textInputs[0].showIncoming(data.value);
 	
-	var msg = JSON.parse(e.data); 
+	// for(var i = 0; i<textInputs.length; i++) { 
+	// 		var textInput = textInputs[i];
+	// 		if(textInput.id == msg.id) { 
+	// 			textInput.showIncoming(msg.data); 
+	// 		}
+	// 	}
+	// 		
+	// } else if(msg.type =='register') { 
+	// 	addNewTextInput(msg.id); 
+	// }	
 
-	console.log("RECEIVED : ", msg); 
-	if(msg.type =='message') { 
-		for(var i = 0; i<textInputs.length; i++) { 
-			var textInput = textInputs[i];
-			if(textInput.id == msg.id) { 
-				textInput.showIncoming(msg.data); 
-			}
-		}
-		
-	} else if(msg.type =='register') { 
-		addNewTextInput(msg.id); 
-	}	
-
-};
+});
 
 function addNewTextInput(id) { 
 	if(!id) return;
@@ -97,29 +88,6 @@ function compare(a,b) {
 }
 
 
-
-
-ws.onclose = function(e) { 
-	wsConnected = false; 
-	console.log("disconnected from "+WEB_SOCKET_URL); 
-	if(connectionRetryTimeout) { 
-		//setTimeout(initWebSocket,connectionRetryTimeout);  
-	}
-};
-
-function sendObject(obj) { 
-	sendMessage(JSON.stringify(obj)); 
-	console.log(JSON.stringify(obj));
-	
-}
-
-function sendMessage(msg) { 
-	if(wsConnected ) {
-		ws.send(msg); 
-	//	console.log(msg); 
-	}
-
-}
 
 
 function getQueryVariable(variable)
@@ -167,7 +135,7 @@ function TextInput(id) {
 	f.addEventListener('submit', function(e) {
 		e.preventDefault(); 
 		console.log(e); 
-		sendObject({type:'message', data:i.value, id:id}); 
+		socket.emit('message', {value:i.value}); 
 		i.value = ''; 
 	});
 	this.showIncoming = function(msg) { 
